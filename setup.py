@@ -4,7 +4,6 @@ setup_params = dict(
     name='pyinthesky',
     packages=setuptools.find_packages(),
     install_requires=[
-        'lxml',
         'requests',
     ],
 )
