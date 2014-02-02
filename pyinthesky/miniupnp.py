@@ -1,6 +1,13 @@
-from formencode.validators import Invalid
+# Found this resource really helpful:
+#  http://www.upnp-hacks.org/upnp.html
 
-def parse(etree):
+#
+#
+# Service Description code.
+#
+#
+
+def parse_service_description(etree):
     from functools import partial
     from utils import nstag
     tag = partial(nstag, etree)
@@ -27,7 +34,7 @@ def parse(etree):
             
             # Check for restricted allowed values.
             allowvals = statevar.find(tag('allowedValueList'))
-            if allowvals:
+            if allowvals is not None:
                 allowed_values = [v.text for v in allowvals]
                 
         # Handle integer types.
@@ -71,7 +78,10 @@ def parse(etree):
     
     actions = {}
     for action in acts.iter(tag('action')):
-        argument_list = action.find(tag('argumentList')) or []
+        argument_list = action.find(tag('argumentList'))
+        if argument_list is None:
+            argument_list = []
+        
         in_args, out_args = OrderedDict(), OrderedDict()
         
         for argument in argument_list:
@@ -86,7 +96,7 @@ def parse(etree):
     
         actions[action.name] = action
         
-    return Service(actions, states)
+    return ServiceControl(actions, states)
     
 class StateVariable(object):
     
@@ -104,7 +114,7 @@ class StateVariable(object):
         return '<StateVariable for {0.name} ({0.pytype.__name__})>'.format(self)
         
     def __repr__(self):
-        return '<StateVariable(name="{0.name}", type="{0.datatype}">'.format(self)
+        return '<StateVariable(name="{0.name}", datatype="{0.datatype}">'.format(self)
 
 class Action(object):
     
@@ -119,9 +129,98 @@ class Action(object):
     def __repr__(self):
         return '<Action(name="{0.name}")">'.format(self)
 
-class Service(object):
-	
-	def __init__(self, actions, states):
-		self.actions = actions
-		self.states = states
+class ServiceControl(object):
+    
+    def __init__(self, actions, states):
+        self.actions = actions
+        self.states = states
 
+#
+#
+# Device description code.
+#
+#
+def parse_device_description(etree):
+    from functools import partial
+    from utils import simple_elements_dict, nstag
+    tag = partial(nstag, etree)
+    
+    device_element = etree.find(tag('device'))
+    device_attrs = simple_elements_dict(device_element)
+    
+    services_element = device_element.find(tag('serviceList'))
+    services_attrs = []
+    for serv_element in services_element.iter(tag('service')):
+        services_attrs.append(simple_elements_dict(serv_element))
+        
+    url_base = getattr(etree.find(tag('URLBase')), 'text', None)
+    
+    # First, we create the services.
+    services = [Service(sa_dict, url_base) for sa_dict in services_attrs]
+    service_dict = {s.name: s for s in services}
+    
+    # Now we create the device object.
+    device = Device(device_attrs, service_dict, url_base)
+    return device
+
+class Service(object):
+    
+    def __init__(self, attrs, url_base=None):
+        from urlparse import urlparse, urljoin
+        self.attributes = attrs
+        
+        # We present some friendlier attribute information via these
+        # names.
+        self.service_id = attrs['serviceId']
+        self.service_type = attrs['serviceType']
+        self.description_url = urljoin(url_base, attrs['SCPDURL'])
+        self.control_url = urljoin(url_base, attrs['controlURL'])
+        self.events_url = urljoin(url_base, attrs['eventSubURL'])
+        
+        # We give our service a more readable name and type.
+        self.name = self.service_id.split(':')[-1]
+        self.servtype = self.service_type.split(':')[-2]
+        
+        # Our location for the service will be based on the control
+        # URL.
+        location = urlparse(self.control_url)
+        self._location = location.hostname
+        if location.port:
+            self._location += ':%s' % location.port
+        
+    def __str__(self):
+        return '<Service "{0.name}" for {0._location}>'.format(self)
+        
+    def __repr__(self):
+        return ('<pyinthesky.miniupnp.Service(name="{0.name}", '
+            'servtype="{0.servtype}") at "{0._location}">').format(self)
+
+class Device(object):
+    
+    def __init__(self, attrs, services, url_base):
+        self.attributes = attrs
+        self.services = services
+        
+        # More accessible attributes here.
+        self.model_name = attrs['modelName']
+        self.model_number = attrs['modelNumber']
+        self.friendlyname = attrs['friendlyName']
+        self.device_type = attrs['deviceType']
+        
+        # Easier to read information.
+        self.devtype = self.device_type.split(':')[-2]
+        assert attrs['UDN'].startswith('uuid:')
+        self.uuid = attrs['UDN'][5:]
+        
+    def __str__(self):
+        return '<Device "{0.devtype}" ({0.model_name})>'.format(self)
+        
+    def __repr__(self):
+        attrs = []
+        attrs.append('devtype="{0.devtype}"')
+        attrs.append('model_name="{0.model_name}"')
+        attrs.append('model_number="{0.model_number}"')
+        attrs.append('uuid="{0.uuid}"')
+        
+        return '<pyinthesky.miniupnp.Device(' + \
+            (', '.join(attrs)).format(self) + ')'
