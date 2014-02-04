@@ -58,6 +58,9 @@ def parse_service_description(etree):
             if allowrange is not None:
                 min_value = int(allowrange.find(tag('minimum')).text)
                 max_value = int(allowrange.find(tag('maximum')).text)
+                
+        elif datatype in ['boolean']:
+            pytype = bool
             
         else:
             # XXX: May want to change this in future to be more tolerant.
