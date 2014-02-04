@@ -42,7 +42,7 @@ def soap_decode(etree):
         
     # Otherwise, it's just a normal response, and we want to return the
     # content.
-    ET.dump(body)
+    #ET.dump(body)
     return body.getchildren()
 
 class SoapError(Exception):
