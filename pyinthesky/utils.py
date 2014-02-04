@@ -1,3 +1,13 @@
+def text_to_xml(content):
+    try:
+        from xml.etree.cElementTree import parse
+        from cStringIO import StringIO
+    except ImportError:
+        from xml.etree.ElementTree import parse
+        from StringIO import StringIO
+        
+    return parse(StringIO(content))
+
 def nstag(tree, tag):
     # If you use the lxml implementation of etree, it's easier to get
     # the schema qualifier:
