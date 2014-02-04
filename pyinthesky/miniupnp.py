@@ -38,7 +38,7 @@ def parse_service_description(etree):
                 allowed_values = [v.text for v in allowvals]
                 
         # Handle integer types.
-        elif datatype in ['ui2', 'ui4', 'i4']:
+        elif datatype in ['ui2', 'ui4', 'i2', 'i4']:
             pytype = int
             if default_value is not None:
                 default_value = int(default_value)
@@ -49,7 +49,8 @@ def parse_service_description(etree):
             min_value, max_value = {
                 'ui2': (0, 256 ** 2 - 1),
                 'ui4': (0, 256 ** 4 - 1),
-                'i4': (- 256 ** 4, 256 ** 4 - 1),
+                'i2': (-256 ** 2, 256 ** 2 - 1),
+                'i4': (-256 ** 4, 256 ** 4 - 1),
             }[datatype]
             
             # Look for explicit limits given.
@@ -227,3 +228,51 @@ class Device(object):
         
         return '<pyinthesky.miniupnp.Device(' + \
             (', '.join(attrs)).format(self) + ')'
+
+def encode_action_request(schema, action, parameters):
+    from .xmlutils import ElementTree as ET
+    res = ET.Element('u:' + action)
+    res.attrib['xmlns:u'] = schema
+    for key, value in parameters.items():
+        param = ET.SubElement(res, key)
+        if not isinstance(value, basestring):
+            raise ValueError(
+                'Value for parameter %s needs to be string type: %r'
+                % (key, value))
+        param.text = value
+    return res
+
+def decode_action_response(action, element):
+    from .xmlutils import simple_elements_dict, striptag
+    if striptag(element) != action + 'Response':
+        raise ValueError('expected to decode "%sResponse", not "%s"',
+            (action, striptag(element.tag)))
+        
+    return simple_elements_dict(element)
+
+def check_upnp_error(soap_error):
+    from .xmlutils import simple_elements_dict, striptag
+    if not soap_error.code.startswith('Client'):
+        return None
+    if soap_error.message != 'UPnPError':
+        return None
+    if len(soap_error.details) != 1:
+        return None
+    upnp_block = soap_error.details[0]
+    if striptag(upnp_block) != 'UPnPError':
+        return None
+        
+    details = simple_elements_dict(upnp_block)
+    code = int(details['errorCode'])
+    desc = details['errorDescription']
+    return UPnPError(code, desc)
+
+class UPnPError(Exception):
+    
+    def __init__(self, code, desc):
+        Exception.__init__(self, "[%s] %s" % (code, desc))
+        self.code = code
+        self.desc = desc
+        
+def is_action_value_error(upnp_error):
+    return upnp_error.code == 718
