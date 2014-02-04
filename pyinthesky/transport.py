@@ -1,4 +1,4 @@
-import requests
+import requests.exceptions
 
 class Transport(object):
 
@@ -62,3 +62,8 @@ class Transport(object):
         return '<{0.__class__.__name__}({0.host}) at {1}>'.format(
             self, hex(id(self))
         )
+    
+    ConnectionError = requests.exceptions.ConnectionError    
+    HTTPError = requests.exceptions.HTTPError
+    Timeout = requests.exceptions.Timeout
+    
