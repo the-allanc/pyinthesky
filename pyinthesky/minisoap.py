@@ -1,35 +1,57 @@
-def soap_request(schema, action, parameters):
-    from xml.etree.ElementTree import ElementTree, Element, SubElement
-    res = Element('s:Envelope')
+def soap_encode(elements):
+    if not isinstance(elements, (tuple, list)):
+        raise ValueError('must pass a sequence of Element objects')
+
+    from .xmlutils import ElementTree as ET
+    res = ET.Element('s:Envelope')
     res.attrib['xmlns:s'] = "http://schemas.xmlsoap.org/soap/envelope/"
     res.attrib['s:encodingStyle'] = "http://schemas.xmlsoap.org/soap/encoding/"
-    body = SubElement(res, 's:Body')
-    mbody = SubElement(body, 'u:' + action)
-    mbody.attrib['xmlns:u'] = schema
-    for key, value in parameters.items():
-        param = SubElement(mbody, key)
-        if not isinstance(value, basestring):
-            raise ValueError(
-                'Value for parameter %s needs to be string type: %r'
-                % (key, value))
-        param.text = value
-    return res
-
-def soap_response(etree, action_name):
+    body = ET.SubElement(res, 's:Body')
+    for element in elements:
+        body.append(element)
+    return ET.ElementTree(res)
+    
+def soap_decode(etree):
     from functools import partial
-    from utils import simple_elements_dict, nstag, baretag
+    from .xmlutils import nstag
     tag = partial(nstag, etree)
-
+    
+    from .xmlutils import ElementTree as ET
     body = etree.find(tag('Body'))
-    for respblock in body.getchildren():
-        if respblock.tag.endswith(action_name + 'Response'):
-            break
-    else:
-        raise RuntimeError, 'xxx'
+    
+    # Is there a SOAP fault here?
+    fault = body.find(tag('Fault'))
+    if fault is not None:
+        faultcode = fault.find('faultcode').text
+        faultstring = fault.find('faultstring').text
         
-    return simple_elements_dict(respblock)
+        # Which exception class? You can get strings like this:
+        #   "s:Client.Authentication"
+        #
+        # So we drop the namespace qualifier and only pay attention to
+        # the first element to determine the class type.
+        faultcode = faultcode.split(':', 1)[-1]
+        faulttype = faultcode.split('.', 1)[0]
+        faultclass = {
+            'Client': SoapClientError,
+            'Server': SoapServerError,
+        }.get(faulttype, SoapError)
         
-    return {
-        baretag(bodypart): simple_elements_dict(bodypart)
-        for bodypart in respblock
-    }
+        detail = fault.find('detail')
+        raise faultclass(faultcode, faultstring, detail.getchildren())
+        
+    # Otherwise, it's just a normal response, and we want to return the
+    # content.
+    ET.dump(body)
+    return body.getchildren()
+
+class SoapError(Exception):
+    
+    def __init__(self, code, message, details):
+        Exception.__init__(self, '%s: %s' % (code, message))
+        self.code = code
+        self.message = message
+        self.details = details
+
+class SoapClientError(SoapError): pass
+class SoapServerError(SoapError): pass
