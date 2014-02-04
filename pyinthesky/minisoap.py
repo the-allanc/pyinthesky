@@ -15,13 +15,21 @@ def soap_request(schema, action, parameters):
         param.text = value
     return res
 
-def soap_response(etree):
+def soap_response(etree, action_name):
     from functools import partial
     from utils import simple_elements_dict, nstag, baretag
     tag = partial(nstag, etree)
 
     body = etree.find(tag('Body'))
+    for respblock in body.getchildren():
+        if respblock.tag.endswith(action_name + 'Response'):
+            break
+    else:
+        raise RuntimeError, 'xxx'
+        
+    return simple_elements_dict(respblock)
+        
     return {
         baretag(bodypart): simple_elements_dict(bodypart)
-        for bodypart in body
+        for bodypart in respblock
     }
