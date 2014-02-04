@@ -29,9 +29,9 @@ def simple_elements_dict(node):
         tagname = childnode.tag
         if '}' in tagname:
             tagname = tagname.split('}')[-1]
-        text = childnode.text.strip()
-        if text:
-            d[tagname] = text
+        text = childnode.text or ''
+        if text is not None:
+            d[tagname] = text.strip()
     return d
 
 def args_to_kwargs(args, kwargs, argnames):
