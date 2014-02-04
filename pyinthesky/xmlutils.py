@@ -1,12 +1,15 @@
-def text_to_xml(content):
-    try:
-        from xml.etree.cElementTree import parse
-        from cStringIO import StringIO
-    except ImportError:
-        from xml.etree.ElementTree import parse
-        from StringIO import StringIO
-        
-    return parse(StringIO(content))
+# Expose the "best" ElementTree implementation available.
+try:
+	from xml.etree import cElementTree as ElementTree
+except ImportError:
+	from xml.etree import ElementTree as ElementTree
+
+def text_to_etree(content):
+    from StringIO import StringIO
+    return ElementTree.parse(StringIO(content))
+    
+def etree_to_text(etree):
+	return ElementTree.tostring(etree.getroot())
 
 def nstag(tree, tag):
     # If you use the lxml implementation of etree, it's easier to get
@@ -54,6 +57,5 @@ def args_to_kwargs(args, kwargs, argnames):
     res.update(zip(argnames, args))
     return res
 
-def baretag(node):
-    tagparts = node.tag.split('}')
-    return tagparts[-1]
+def striptag(node):
+    return node.tag.split('}')[-1]
