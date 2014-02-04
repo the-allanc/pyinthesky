@@ -31,20 +31,27 @@ class Validator(object):
 def create_validator(objdesc, varname):
     args, kw = [], {}
     
-    from formencode.validators import ConfirmType, OneOf, Int 
+    from formencode import validators as validmod 
     if objdesc.pytype is unicode:
         if objdesc.allowed_values:
-            vc = OneOf
+            vc = validmod.OneOf
             args = [objdesc.allowed_values]
             ident = 'enum text'
         else:
-            vc = ConfirmType
+            vc = validmod.ConfirmType
             kw = {'subclass': basestring}
             ident = 'text'
     elif objdesc.pytype is int:
-        vc = Int
+        vc = validmod.Int
         kw = dict(min=objdesc.min_value, max=objdesc.max_value)
         ident = 'int' if objdesc.max_value is None else 'int-range'
+    elif objdesc.pytype is bool:
+        vc = validmod.StringBool
+        kw = dict(
+            false_values='0 false no'.split(),
+            true_values='1 true yes'.split()
+        )
+        ident = 'boolean'
     else:
         raise ValueError('cannot create validator for %s' % objdesc.pytype)
         
@@ -69,7 +76,8 @@ def create_multivalidator(validator_dict, varname):
         identifiers.append("%s='%s'" % (varname, validator.ident))
         
     from formencode.validators import Wrapper    
-    wrap = Wrapper(convert_to_python=_dict_values_to_unicode)
+    wrap = Wrapper(convert_to_python=_dict_values_to_unicode,
+        empty_value=dict)
     
     v = Validator(s, ', '.join(identifiers), output_wrapper=wrap)
     v.argument_order = validator_dict.keys()
