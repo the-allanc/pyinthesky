@@ -5,24 +5,28 @@ del Wrapper
 
 class Validator(object):
     
-    def __init__(self, validator, wrapper=_unicode_out):
-        self._identifier = validator
-        if wrapper is not None:
+    def __init__(self, validator, ident_string, output_wrapper=None):
+        self.in_validator = validator
+        self.out_validator = validator
+        self.ident = ident_string
+        
+        if output_wrapper is not None:
             from formencode.compound import Pipe
-            validator = Pipe(wrapper, validator)
-        self.validator = validator
+            self.out_validator = Pipe(validator, output_wrapper)
         
     def input(self, value):
-        return self.validator.to_python(value)
+        return self.in_validator.to_python(value)
         
     def output(self, value):
-        return self.validator.from_python(value)
+        return self.out_validator.to_python(value)
+
+    Invalid = Invalid
         
     def __str__(self):
-        return '<Validator (%s)>' % self._identifier
+        return '<Validator(%s)>' % self.ident
         
     def __repr__(self):
-        return '<Validator (%r)>' % self._identifier
+        return '<Validator(%s) at %s>' % (self.ident, hex(id(self)))
         
 def create_validator(objdesc, varname):
     args, kw = [], {}
@@ -32,44 +36,41 @@ def create_validator(objdesc, varname):
         if objdesc.allowed_values:
             vc = OneOf
             args = [objdesc.allowed_values]
+            ident = 'enum text'
         else:
             vc = ConfirmType
             kw = {'subclass': basestring}
+            ident = 'text'
     elif objdesc.pytype is int:
         vc = Int
         kw = dict(min=objdesc.min_value, max=objdesc.max_value)
+        ident = 'int' if objdesc.max_value is None else 'int-range'
     else:
         raise ValueError('cannot create validator for %s' % objdesc.pytype)
         
     if objdesc.default_value is not None:
         kw['if_missing'] = objdesc.default_value
+        ident += ' with default'
 
     v = vc(*args, **kw)
-    return Validator(v)
+    return Validator(v, ident, output_wrapper=_unicode_out)
 
 def create_multivalidator(validator_dict, varname):
-    from formencode.schema import NoDefault, Schema
     
-    defaults = {}
-    identifiers = {}
+    identifiers = []
     
-    s = Schema()        
+    def _dict_values_to_unicode(value):
+        return dict((k, unicode(v)) for (k, v) in value.items())
+    
+    from formencode.schema import Schema
+    s = Schema()
     for varname, validator in validator_dict.items():
-        s.add_field(varname, validator.validator)
-        identifiers[varname] = validator._identifier
+        s.add_field(varname, validator.in_validator)
+        identifiers.append("%s='%s'" % (varname, validator.ident))
         
-        # if_missing values don't get picked up for "from_python", so we
-        # create a custom wrapper to present those defaults.
-        if validator.validator.if_missing is not NoDefault:
-            defaults[varname] = validator.validator.if_missing
-            
-    def include_defaults(value):
-        d = defaults.copy()
-        d.update(value)
-        return d
-        
-    from formencode.validators import Wrapper
-    v = Validator(s, Wrapper(convert_from_python=include_defaults))
-    v.arg_order = validator_dict.keys()
-    v._identifier = identifiers
+    from formencode.validators import Wrapper    
+    wrap = Wrapper(convert_to_python=_dict_values_to_unicode)
+    
+    v = Validator(s, ', '.join(identifiers), output_wrapper=wrap)
+    v.argument_order = validator_dict.keys()
     return v
