@@ -6,9 +6,10 @@ del Wrapper
 class Validator(object):
     
     def __init__(self, validator, wrapper=_unicode_out):
+        self._identifier = validator
         if wrapper is not None:
             from formencode.compound import Pipe
-            validator = Pipe(validator, wrapper)
+            validator = Pipe(wrapper, validator)
         self.validator = validator
         
     def input(self, value):
@@ -18,10 +19,10 @@ class Validator(object):
         return self.validator.from_python(value)
         
     def __str__(self):
-		return '<Validator (%s)>' % self.validator
-		
+        return '<Validator (%s)>' % self._identifier
+        
     def __repr__(self):
-		return '<Validator (%r)>' % self.validator
+        return '<Validator (%r)>' % self._identifier
         
 def create_validator(objdesc, varname):
     args, kw = [], {}
@@ -50,10 +51,12 @@ def create_multivalidator(validator_dict, varname):
     from formencode.schema import NoDefault, Schema
     
     defaults = {}
+    identifiers = {}
     
-    s = Schema()
+    s = Schema()        
     for varname, validator in validator_dict.items():
         s.add_field(varname, validator.validator)
+        identifiers[varname] = validator._identifier
         
         # if_missing values don't get picked up for "from_python", so we
         # create a custom wrapper to present those defaults.
@@ -68,4 +71,5 @@ def create_multivalidator(validator_dict, varname):
     from formencode.validators import Wrapper
     v = Validator(s, Wrapper(convert_from_python=include_defaults))
     v.arg_order = validator_dict.keys()
+    v._identifier = identifiers
     return v
