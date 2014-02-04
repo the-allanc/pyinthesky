@@ -83,35 +83,80 @@ class Service(object):
             
     def invoke(self, action_name, *args, **kwargs):
         
+        from pyinthesky import minisoap, miniupnp, xmlutils
+        
         # Find the action definition and get the argument order.
         in_valid, out_valid = self.methods[action_name]
         
         # Then take the positional arguments and normalise them to
         # keyword-only arguments.
-        from pyinthesky.utils import args_to_kwargs
-        kw = args_to_kwargs(args, kwargs, in_valid.arg_order)
+        try:
+            kw = xmlutils.args_to_kwargs(args, kwargs, in_valid.argument_order)
+        except TypeError as te:
+            raise TypeError(action + ' ' + te)
         
         # Next, validate and convert the arguments.
-        kw_to_use = in_valid.output(kw)
+        try:
+            kw_to_use = in_valid.output(kw)
+        except in_valid.Invalid as e:
+            raise ValueError(e)
         
-        # Build a SOAP request.
-        from pyinthesky.minisoap import soap_request, soap_response
+        # Build a UPNP request, then bundle that into SOAP.
         schema = self.upnp_service.service_type
-        soapbody = soap_request(schema, action_name, kw_to_use)
+        upnp_req = miniupnp.encode_action_request(schema, action_name, kw_to_use)
+        soap_req = minisoap.soap_encode([upnp_req])
         
         # Submit it to the control URL.
-        from xml.etree.ElementTree import tostring, dump
-        dump(soapbody)
-        
         respobj = self.transport.soap_request(
-            self.upnp_service.control_url, schema, action_name, tostring(soapbody)
+            self.upnp_service.control_url, schema, action_name,
+            xmlutils.etree_to_text(soap_req), raw_resp=True
         )
         
-        # De-soapify the response.
-        respdict = soap_response(_text_to_xml(respobj.text), action_name)
+        # Try to interpret it as a SOAP response - it may be an error
+        # response too.
+        try:
+            resp_etree = xmlutils.text_to_etree(respobj.content)
+        except xmlutils.ElementTree.ParseError:
+            # Just raise the original HTTP error - but if there wasn't
+            # one (curious), then raise an error complaining about the
+            # inability to parse the XML.
+            respobj.raise_for_status()
+            raise
+            
+        # Decode the SOAP response.
+        try:
+            upnp_resp = minisoap.soap_decode(resp_etree)
+        except minisoap.SoapError as se:
+            # Check to see if it's a UPnPError wrapped inside a Soap error.
+            ue = miniupnp.check_upnp_error(se)
+            if ue is None:
+                raise
+
+            # Check to see if it specifically refers to a problem with
+            # a given value.
+            if not miniupnp.is_action_value_error(ue):
+                raise ue
+                
+            ave = ActionValueError(ue.desc)
+            ave.cause = ue
+            raise ave
+
+        # There should only be one response body.
+        if len(upnp_resp) == 0:
+            untyped_result = {}
+        elif len(upnp_resp) == 1:
+            untyped_result = miniupnp.decode_action_response(
+                action_name, upnp_resp[0])
+        else:
+            raise RuntimeError('%s body parts inside UPnP response' % len(upnp_resp))
+            
+        # Break values out from their UPnP structure, and then convert
+        # the value types appropriately.
+        result = out_valid.input(untyped_result)
         
-        # Deserialise the values.
-        return out_valid.input(respdict)
+        # Return either the dictionary structure if populated, or None
+        # if empty.
+        return result or None
 
     @property
     def transport(self):
@@ -120,3 +165,5 @@ class Service(object):
     @property
     def create_validator(self):
         return self.device.connection.create_validator
+
+class ActionValueError(ValueError): pass
