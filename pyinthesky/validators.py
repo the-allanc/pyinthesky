@@ -1,4 +1,4 @@
-from formencode.api import Invalid
+from formencode.api import Invalid, NoDefault as _NoDefault
 from formencode.validators import Wrapper
 _unicode_out = Wrapper(convert_from_python=unicode)
 del Wrapper
@@ -65,15 +65,19 @@ def create_validator(objdesc, varname):
 def create_multivalidator(validator_dict, varname):
     
     identifiers = []
+    defaults = {}
     
     def _dict_values_to_unicode(value):
         return dict((k, unicode(v)) for (k, v) in value.items())
     
     from formencode.schema import Schema
     s = Schema()
-    for varname, validator in validator_dict.items():
+    for vname, validator in validator_dict.items():
         s.add_field(varname, validator.in_validator)
-        identifiers.append("%s='%s'" % (varname, validator.ident))
+        identifiers.append("%s='%s'" % (vname, validator.ident))
+        the_default = validator.in_validator.if_missing
+        if the_default is not _NoDefault:
+            defaults[vname] = the_default
         
     from formencode.validators import Wrapper    
     wrap = Wrapper(convert_to_python=_dict_values_to_unicode,
@@ -81,4 +85,5 @@ def create_multivalidator(validator_dict, varname):
     
     v = Validator(s, ', '.join(identifiers), output_wrapper=wrap)
     v.argument_order = validator_dict.keys()
+    v.argument_defaults = defaults
     return v
