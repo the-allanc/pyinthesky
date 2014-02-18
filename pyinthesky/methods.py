@@ -19,6 +19,12 @@ def method_sig_wrapper(target, name, varnames, defaults=None):
             try:
                 defaults_l.append(defaults_d.pop(argname))
             except KeyError:
+                # XXX: We've got awkward method definitions - we need to
+                # be able to handle this gracefully:
+                #   SetAVTransportURI ['InstanceID', 'CurrentURIMetaData', 'CurrentURI'] {'CurrentURIMetaData': 'NOT_IMPLEMENTED'}
+                defaults_l = []
+                defaults_d = {}
+                break
                 raise ValueError("require default value for '%s'" % argname)
         if defaults_d:
             raise ValueError("default provided for unspecified varname: '%s'" % defaults_d.keys()[0])
