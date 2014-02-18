@@ -10,7 +10,7 @@ def method_sig_wrapper(target, name, varnames, defaults=None):
     defaults_l = []
         
     # Translating the dictionary into the sequence required.
-    if defaults is not None:
+    if defaults:
         defaults_d = defaults.copy()
         
         # We get the X last variable names - they are presumably the
@@ -21,7 +21,7 @@ def method_sig_wrapper(target, name, varnames, defaults=None):
             except KeyError:
                 raise ValueError("require default value for '%s'" % argname)
         if defaults_d:
-			raise ValueError("default provided for unspecified varname: '%s'" % defaults_d.keys()[0])
+            raise ValueError("default provided for unspecified varname: '%s'" % defaults_d.keys()[0])
     
     del defaults
     
