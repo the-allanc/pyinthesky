@@ -2,8 +2,9 @@ import requests.exceptions
 
 class Transport(object):
 
-    def __init__(self, host, default_timeout=30):
+    def __init__(self, host, port=49153, default_timeout=30):
         self.host = host
+        self.port = port
         
         import requests
         self.session = requests.Session()
@@ -17,7 +18,7 @@ class Transport(object):
             return location
         if location.startswith('/'):
             location = location[1:]
-        return 'http://{0}:49153/{1}'.format(self.host, location) 
+        return 'http://{0.host}:{0.port}/{1}'.format(self, location) 
         
     def get_resource(self, location, timeout=None, raw_resp=False):
         url = self.__url(location)
@@ -59,7 +60,7 @@ class Transport(object):
         return '<{0.__class__.__name__} for {0.host}>'.format(self)
 
     def __repr__(self):
-        return '<{0.__class__.__name__}({0.host}) at {1}>'.format(
+        return '<{0.__class__.__name__}({0.host}:{0.port}) at {1}>'.format(
             self, hex(id(self))
         )
     
