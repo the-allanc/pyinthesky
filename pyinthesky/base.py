@@ -1,4 +1,4 @@
-from .utils import text_to_xml as _text_to_xml
+from .xmlutils import text_to_etree as _text_to_xml
 
 def default_validator(service_type, key, value):
     from .validators import create_validator

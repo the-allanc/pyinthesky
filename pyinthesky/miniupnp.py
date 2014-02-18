@@ -9,7 +9,7 @@
 
 def parse_service_description(etree):
     from functools import partial
-    from utils import nstag
+    from xmlutils import nstag
     tag = partial(nstag, etree)
 
     #
@@ -149,7 +149,7 @@ class ServiceControl(object):
 #
 def parse_device_description(etree):
     from functools import partial
-    from utils import simple_elements_dict, nstag
+    from xmlutils import simple_elements_dict, nstag
     tag = partial(nstag, etree)
     
     device_element = etree.find(tag('device'))
