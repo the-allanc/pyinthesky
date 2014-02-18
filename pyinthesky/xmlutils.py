@@ -1,15 +1,23 @@
 # Expose the "best" ElementTree implementation available.
+#
+# Got to be careful with what combinations of modules we use here - see:
+#   http://bugs.python.org/issue20612
 try:
 	from xml.etree import cElementTree as ElementTree
+	from cStringIO import StringIO as _StrIO
 except ImportError:
 	from xml.etree import ElementTree as ElementTree
+	from StringIO import StringIO as _StrIO
+	
 
 def text_to_etree(content):
-    from StringIO import StringIO
-    return ElementTree.parse(StringIO(content))
+    return ElementTree.parse(_StrIO(content))
     
 def etree_to_text(etree):
 	return ElementTree.tostring(etree.getroot())
+	
+# May need to implement strip_schema. Look at:
+#   http://homework.nwsnet.de/releases/45be/
 
 def nstag(tree, tag):
     # If you use the lxml implementation of etree, it's easier to get
