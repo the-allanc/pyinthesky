@@ -72,12 +72,12 @@ def create_multivalidator(validator_dict, varname):
     
     from formencode.schema import Schema
     s = Schema()
-    for vname, validator in validator_dict.items():
-        s.add_field(varname, validator.in_validator)
-        identifiers.append("%s='%s'" % (vname, validator.ident))
-        the_default = validator.in_validator.if_missing
+    for subvarname, subvalidator in validator_dict.items():
+        s.add_field(subvarname, subvalidator.in_validator)
+        identifiers.append("%s='%s'" % (subvarname, subvalidator.ident))
+        the_default = subvalidator.in_validator.if_missing
         if the_default is not _NoDefault:
-            defaults[vname] = the_default
+            defaults[subvarname] = the_default
         
     from formencode.validators import Wrapper    
     wrap = Wrapper(convert_to_python=_dict_values_to_unicode,
