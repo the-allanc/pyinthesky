@@ -40,3 +40,18 @@ def method_sig_wrapper(target, name, varnames, defaults=None):
     f = global_ns[name]
     f.func_defaults = tuple(defaults_l)
     return f
+
+_ambiguous_docstring = '''
+This is a convenience function which cannot be used, as there are multiple
+methods available with the same name. You will have to call the required
+methods more directly:
+'''.strip() + '\n'
+
+def make_ambiguous_function(name, func_locations):
+    e = 'method "%s" is ambiguous - will need to invoke directly from service'
+    def cant_do_it(*args, **kwargs):
+        raise RuntimeError(e % name)
+    cant_do_it.__name__ = name
+    describes = '\n'.join(['  - ' + fl for fl in func_locations])
+    cant_do_it.__doc__ = _ambiguous_docstring + describes
+    return cant_do_it
