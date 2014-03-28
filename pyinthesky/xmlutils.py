@@ -3,19 +3,21 @@
 # Got to be careful with what combinations of modules we use here - see:
 #   http://bugs.python.org/issue20612
 try:
-	from xml.etree import cElementTree as ElementTree
-	from cStringIO import StringIO as _StrIO
+    from xml.etree import cElementTree as ElementTree
+    from cStringIO import StringIO as _StrIO
 except ImportError:
-	from xml.etree import ElementTree as ElementTree
-	from StringIO import StringIO as _StrIO
-	
+    from xml.etree import ElementTree as ElementTree
+    from StringIO import StringIO as _StrIO
+    
 
 def text_to_etree(content):
+    if isinstance(content, unicode):
+        content = content.encode('utf-8')
     return ElementTree.parse(_StrIO(content))
     
 def etree_to_text(etree):
-	return ElementTree.tostring(etree.getroot())
-	
+    return ElementTree.tostring(etree.getroot())
+    
 # May need to implement strip_schema. Look at:
 #   http://homework.nwsnet.de/releases/45be/
 
@@ -37,11 +39,14 @@ def simple_elements_dict(node):
         tagname = childnode.tag
         if '}' in tagname:
             tagname = tagname.split('}')[-1]
-        text = childnode.text or ''
+        text = childnode.text and childnode.text.strip()
         if text is not None:
-            d[tagname] = text.strip()
+            d[tagname] = text
+        for attrname, attrvalue in childnode.items():
+            d[tagname + '.' + attrname] = attrvalue
     return d
 
+# XXX: This function doesn't belong here!
 def args_to_kwargs(args, kwargs, argnames):
 
     # Check we haven't exceeded the number of allowed arguments.
