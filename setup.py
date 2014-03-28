@@ -5,6 +5,7 @@ setup_params = dict(
     packages=setuptools.find_packages(),
     install_requires=[
         'requests',
+        'iso8601',
     ],
 )
 
