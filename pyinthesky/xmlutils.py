@@ -35,6 +35,8 @@ def nstag(tree, tag):
 
 def simple_elements_dict(node):
     d = {}
+    for attrname, attrvalue in node.items():
+        d[attrname] = attrvalue
     for childnode in node.getchildren():
         tagname = childnode.tag
         if '}' in tagname:
