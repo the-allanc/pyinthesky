@@ -1,10 +1,8 @@
-SERVICE_TYPES = ('urn:schemas-nds-com:device:SkyServe:2', 'urn:schemas-nds-com:device:SkyControl:2')
-
-
-
-
-#data2 = 'M-SEARCH * HTTP/1.1\r\nHOST: 239.255.255.250:1900\r\nST: urn:schemas-nds-com:device:SkyServe:2\r\nMAN: "ssdp:discover"\r\nMX: 3\r\n\r\n'
-#data3 = 'M-SEARCH * HTTP/1.1\r\nHOST: 239.255.255.250:1900\r\nST: urn:schemas-nds-com:device:SkyControl:2\r\nMAN: "ssdp:discover"\r\nMX: 3\r\n\r\n'
+SERVICE_TYPES = [
+    'urn:schemas-nds-com:device:SkyControl:2',
+    'urn:schemas-nds-com:device:SkyRemote:2',
+    'urn:schemas-nds-com:device:SkyServe:2',
+]
 
 def encode(protocol, **headers):
     lines = [protocol]
@@ -12,21 +10,21 @@ def encode(protocol, **headers):
     return '\r\n'.join(lines) + '\r\n\r\n'
     
 def decode(data):
-    return {k: v.upper() for (k, v) in 
-        [l.split(': ', 1) for l in data.splitlines()[1:] if l]
-    }
+    res = {}
+    for dataline in data.splitlines()[1:]:
+        line_parts = dataline.split(':', 1)
+        # This is to deal with headers with no value.
+        if len(line_parts) < 2:
+            line_parts = (line_parts[0], '')
+        res[line_parts[0].strip().upper()] = line_parts[1].strip()
+    return res
 
-# Create a socket to send a multicast request.
 MCAST_IP = "239.255.255.250"
 MCAST_PORT = 1900
 MCAST_IP_PORT = MCAST_IP + ':' + str(MCAST_PORT)
 
-def search(host=None, service_types=None, timeout=5, logger=False, search_every=1):
-    if logger is True:
-        logger = logging.getLogger('pyinthesky.minissdp')
-    if service_types is None:
-        service_types = SERVICE_TYPES
-        
+# Create a socket to send a multicast request.
+def make_socket():
     import struct
     import socket
     mreq = struct.pack("4sl", socket.inet_aton(MCAST_IP), socket.INADDR_ANY)
@@ -34,29 +32,26 @@ def search(host=None, service_types=None, timeout=5, logger=False, search_every=
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sock.bind(('', MCAST_PORT))
     sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
-    #sock.setblocking(False)
     sock.settimeout(0.2)
-    
-    import contextlib
-    with contextlib.closing(sock) as sock:
-        for service_type in service_types:
-            yield _locate_service(host, service_type, sock, timeout, logger, search_every)
-            
-def _locate_service(host, service_type, sock, timeout, logger, search_every):
+    return sock
 
-    import socket            
+def service_search(sock, service_type=None, host=None, timeout=10, logger=None, search_every=2):
+
+    if not logger:
+        import logging
+        logger = logging.getLogger('pyinthesky.minissdp')
 
     # Search for the service.
-    msg = encode('M-SEARCH * HTTP/1.1', HOST=MCAST_IP_PORT,
-        ST=service_type, MAN='"ssdp: discover"', MX='3')
+    msgparts = dict(HOST=MCAST_IP_PORT, MAN='"ssdp:discover"', MX='3')
+    if service_type:
+        msgparts['ST'] = service_type
+    msg = encode('M-SEARCH * HTTP/1.1', **msgparts)
     
-    # We keep broadcasting messages.
+    # Figure out how long we can run for.
     import time
     now = time.time()
     give_up_by = now + timeout
-    
-    ok = False
-    
+
     # We keep on trying every <search_every> seconds.
     while now < give_up_by:
         
@@ -66,17 +61,57 @@ def _locate_service(host, service_type, sock, timeout, logger, search_every):
         
         # And listen for responses on the socket until we get
         # matches.
+        import socket
         while now < next_broadcast:
             try:
                 data = sock.recv(1024)
             except socket.timeout:
                 now = time.time()
                 continue
-            if not data.startswith('HTTP/1.1 200 OK'):
+            if data.startswith('HTTP/1.1 200 OK'):
+                servkey = 'ST'
+            elif data.startswith('NOTIFY * HTTP/1.1'):
+                servkey = 'NT'
+            else:
                 continue
+                
             resp = decode(data)
-            if resp.get('ST') != service_type:
-                continue
-            return resp('ST'), resp['LOCATION']
+            resp_servtype = resp[servkey]
             
-    raise RuntimeError('could not find %s' % service_type)
+            # Didn't match particular service.
+            if service_type not in (resp_servtype, None):
+                continue
+                
+            # Perform a host check if we need to.
+            location = resp['LOCATION']
+            if host:
+                import urlparse
+                urlobj = urlparse.urlparse(location)
+                if host not in (urlobj.netloc, urlobj.hostname):
+                    continue
+                
+            yield resp_servtype, location
+
+def search(service_types=None, host=None, timeout=5, logger=None):
+    if not logger:
+        import logging
+        logger = logging.getLogger('pyinthesky.minissdp')
+
+    if service_types is None:
+        from pyinthesky import SERVICE_TYPES
+        service_types = SERVICE_TYPES
+        
+    if not isinstance(service_types, dict):
+        service_types = dict.fromkeys(service_types, True)
+        
+    import contextlib
+    with contextlib.closing(make_socket()) as sock:
+        for (service_type, required) in service_types.items():
+            for res in service_search(sock, service_type, host, timeout, logger):
+                yield res
+                break
+            else:
+                # If it's required, complain. If not, just skip.
+                if required:
+                    err = 'unable to find service of type "%s"'
+                    raise RuntimeError(err % service_type) 
