@@ -29,7 +29,7 @@ def parse_service_description(etree):
         allowed_values = min_value = max_value = None
 
         # Handle string types.        
-        if datatype == 'string':
+        if datatype in ['string', 'uri']:
             pytype = unicode
             
             # Check for restricted allowed values.
@@ -38,7 +38,7 @@ def parse_service_description(etree):
                 allowed_values = [v.text for v in allowvals]
                 
         # Handle integer types.
-        elif datatype in ['ui2', 'ui4', 'i2', 'i4']:
+        elif datatype in ['ui2', 'ui4', 'i2', 'i4', 'int']:
             pytype = int
             if default_value is not None:
                 default_value = int(default_value)
@@ -46,12 +46,15 @@ def parse_service_description(etree):
             # Although we may or may not have defined minimum and
             # maximum values, we start off using the limits as defined
             # by the integer byte size.
-            min_value, max_value = {
-                'ui2': (0, 256 ** 2 - 1),
-                'ui4': (0, 256 ** 4 - 1),
-                'i2': (-256 ** 2, 256 ** 2 - 1),
-                'i4': (-256 ** 4, 256 ** 4 - 1),
-            }[datatype]
+            try:
+                min_value, max_value = {
+                    'ui2': (0, 256 ** 2 - 1),
+                    'ui4': (0, 256 ** 4 - 1),
+                    'i2': (-256 ** 2, 256 ** 2 - 1),
+                    'i4': (-256 ** 4, 256 ** 4 - 1),
+                }[datatype]
+            except KeyError:
+                pass
             
             # Look for explicit limits given.
             allowrange = statevar.find(tag('allowedValueRange'))
