@@ -127,9 +127,6 @@ class Recording(object):
         tmpl = '<Recording "{title}" ({channelName})'
         if schedtime:
             tmpl += ' at {0}'
-        else:
-			import pprint
-			pprint.pprint(self.attributes)
         tmpl += '>'       
         return tmpl.format(schedtime, **self.attributes)
 
