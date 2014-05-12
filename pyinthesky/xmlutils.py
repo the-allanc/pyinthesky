@@ -48,29 +48,5 @@ def simple_elements_dict(node):
             d[tagname + '.' + attrname] = attrvalue
     return d
 
-# XXX: This function doesn't belong here!
-def args_to_kwargs(args, kwargs, argnames):
-
-    # Check we haven't exceeded the number of allowed arguments.
-    argcount = len(args) + len(kwargs)  
-    if argcount > len(argnames):
-        errmsg = {
-            0: "takes no arguments ({1} given)",
-            1: "takes exactly 1 argument ({1} given)",
-        }.get(argcount, "takes exactly {0} arguments ({1} given)")
-        raise TypeError(errmsg.format(len(argnames), argcount))
-    
-    # Check we haven't defined both arguments and keyword arguments for
-    # the same.
-    for argname in argnames[:len(args)]:
-        if argname in kwargs:
-            err = "got multiple values for keyword argument '%s'"
-            raise TypeError(err % argname)
-
-    # Combine the values.
-    res = kwargs.copy()
-    res.update(zip(argnames, args))
-    return res
-
 def striptag(node):
     return node.tag.split('}')[-1]
