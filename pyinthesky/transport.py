@@ -1,11 +1,28 @@
 import requests.exceptions
 
+DEFAULT_PORT = 49153
+
 class Transport(object):
 
-    def __init__(self, host, port=49153, default_timeout=30):
-        self.host = host
-        self.port = port
-        
+    def __init__(self, host=None, port=None, root=None, fixed_root=False, default_timeout=10):
+        if root and host:
+            raise ValueError('cannot specify root as well as host')
+        if root and '://' not in root:
+            err = 'root must include protocol - e.g. "http://host:port/", not "%r"'
+            raise ValueError(err % (root,))
+        if port and not host:
+            raise ValueError('cannot specify port without specifying host')
+        if root:
+            self.root = root
+        elif host:
+            self.root = 'http://%s:%s/' % (host, port or DEFAULT_PORT)
+        elif fixed_root:
+            raise ValueError('cannot fix root without any host / root values')
+        else:
+            self.root = None
+            
+        self.fixed_root = fixed_root
+            
         import requests
         self.session = requests.Session()
         
@@ -13,15 +30,30 @@ class Transport(object):
         self.session.headers['User-Agent'] = 'SKY_skyplus'
         self.default_timeout = default_timeout
         
-    def __url(self, location):
-        if '://' in location:
-            return location
-        if location.startswith('/'):
-            location = location[1:]
-        return 'http://{0.host}:{0.port}/{1}'.format(self, location) 
+    def _url(self, resource):
+        
+        # Resources cannot be at a higher path than the route, so relative
+        # resources will have their leading slashes removed.
+        if resource.startswith('/'):
+            resource = resource[1:]
+        
+        # Relative path.
+        import urlparse
+        if '://' not in resource:
+            if not self.root:
+                raise ValueError('cannot resolve relative path without a root')
+            return urlparse.urljoin(self.root, resource)
+        
+        # Absolute path.
+        if not self.fixed_root:
+            return resource
+        
+        # Parse the URL and reattach the root.
+        parsed_url = urlparse.urlparse(resource)
+        return urlparse.urljoin(self.root, resource)
         
     def get_resource(self, location, timeout=None, raw_resp=False):
-        url = self.__url(location)
+        url = self._url(location)
         
         import requests
         req = requests.Request('GET', url)
@@ -31,12 +63,12 @@ class Transport(object):
             resp.raise_for_status()
         return resp
         
-    def send_request(self, req, timeout=None):
+    def send_request(self, req, timeout=10):
         return self.session.send(req, timeout=timeout)
         
     def soap_request(self, location, schema, method, soapbody,
         timeout=None, raw_resp=False):
-        url = self.__url(location)
+        url = self._url(location)
         
         # Quotes around the soap-action header is important - you will
         # get a 500 error otherwise. Same with the Content-Type - if
@@ -57,10 +89,10 @@ class Transport(object):
         return resp
         
     def __str__(self):
-        return '<{0.__class__.__name__} for {0.host}>'.format(self)
+        return '<{0.__class__.__name__} for {0.root}>'.format(self)
 
     def __repr__(self):
-        return '<{0.__class__.__name__}({0.host}:{0.port}) at {1}>'.format(
+        return '<{0.__class__.__name__}({0.root}) at {1}>'.format(
             self, hex(id(self))
         )
     
