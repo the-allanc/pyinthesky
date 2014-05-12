@@ -1,9 +1,3 @@
-SERVICE_TYPES = [
-    'urn:schemas-nds-com:device:SkyControl:2',
-    'urn:schemas-nds-com:device:SkyRemote:2',
-    'urn:schemas-nds-com:device:SkyServe:2',
-]
-
 def encode(protocol, **headers):
     lines = [protocol]
     lines.extend(['%s: %s' % kv for kv in headers.items()])
@@ -92,7 +86,8 @@ def service_search(sock, service_type=None, host=None, timeout=10, logger=None, 
                 
             yield resp_servtype, location
 
-def search(service_types=None, host=None, timeout=5, logger=None):
+def search(service_types=None, host=None, timeout=5, logger=None,
+    resources_only=False):
     if not logger:
         import logging
         logger = logging.getLogger('pyinthesky.minissdp')
@@ -108,10 +103,11 @@ def search(service_types=None, host=None, timeout=5, logger=None):
     with contextlib.closing(make_socket()) as sock:
         for (service_type, required) in service_types.items():
             for res in service_search(sock, service_type, host, timeout, logger):
-                yield res
+                yield res[1] if resources_only else res
                 break
             else:
                 # If it's required, complain. If not, just skip.
                 if required:
-                    err = 'unable to find service of type "%s"'
-                    raise RuntimeError(err % service_type) 
+                    from requests import Timeout
+                    err = 'unable to find service of type "%s" within %s seconds'
+                    raise Timeout(err % (service_type, timeout)) 
