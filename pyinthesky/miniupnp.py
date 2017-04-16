@@ -6,10 +6,11 @@
 # Service Description code.
 #
 #
+import six
 
 def parse_service_description(etree):
     from functools import partial
-    from xmlutils import nstag
+    from .xmlutils import nstag
     tag = partial(nstag, etree)
 
     #
@@ -30,7 +31,7 @@ def parse_service_description(etree):
 
         # Handle string types.
         if datatype in ['string', 'uri']:
-            pytype = unicode
+            pytype = six.text_type
 
             # Check for restricted allowed values.
             allowvals = statevar.find(tag('allowedValueList'))
@@ -152,7 +153,7 @@ class ServiceControl(object):
 #
 def parse_device_description(etree):
     from functools import partial
-    from xmlutils import simple_elements_dict, nstag
+    from .xmlutils import simple_elements_dict, nstag
     tag = partial(nstag, etree)
 
     device_element = etree.find(tag('device'))
@@ -176,16 +177,16 @@ def parse_device_description(etree):
 class Service(object):
 
     def __init__(self, attrs, url_base=None):
-        from urlparse import urlparse, urljoin
+        from six.moves.urllib import parse
         self.attributes = attrs
 
         # We present some friendlier attribute information via these
         # names.
         self.service_id = attrs['serviceId']
         self.service_type = attrs['serviceType']
-        self.description_url = urljoin(url_base, attrs['SCPDURL'])
-        self.control_url = urljoin(url_base, attrs['controlURL'])
-        self.events_url = urljoin(url_base, attrs['eventSubURL'])
+        self.description_url = parse.urljoin(url_base, attrs['SCPDURL'])
+        self.control_url = parse.urljoin(url_base, attrs['controlURL'])
+        self.events_url = parse.urljoin(url_base, attrs['eventSubURL'])
 
         # We give our service a more readable name and type.
         self.name = self.service_id.split(':')[-1]
@@ -193,7 +194,7 @@ class Service(object):
 
         # Our location for the service will be based on the control
         # URL.
-        location = urlparse(self.control_url)
+        location = parse.urlparse(self.control_url)
         self._location = location.hostname
         if location.port:
             self._location += ':%s' % location.port
@@ -241,7 +242,7 @@ def encode_action_request(schema, action, parameters):
     res.attrib['xmlns:u'] = schema
     for key, value in parameters.items():
         param = ET.SubElement(res, key)
-        if not isinstance(value, basestring):
+        if not isinstance(value, six.string_types):
             raise ValueError(
                 'Value for parameter %s needs to be string type: %r'
                 % (key, value))

@@ -5,6 +5,9 @@
 #  3. Support for **kwargs.
 #
 # Should be called func_sig_wrapper
+
+import six
+
 def method_sig_wrapper(target, name, varnames, defaults=None,
     make_method=False):
 
@@ -112,7 +115,8 @@ def bind_service_methods(target, services=None, bind_to_class=False):
         if target_class is None:
             setattr(target, methname, f)
         else:
-            setattr(target_class, methname, MethodType(f, None, target_class))
+            m = six.create_unbound_method(f, target_class)
+            setattr(target_class, methname, m)
 
     if bind_target_class:
         target.__class__ = target_class

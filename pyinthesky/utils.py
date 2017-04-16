@@ -9,9 +9,9 @@ def args_to_kwargs(args, kwargs, argnames):
         }.get(argcount, "takes exactly {0} arguments ({1} given)")
         raise TypeError(errmsg.format(len(argnames), argcount))
 
-    # Check we haven't defined both arguments and keyword arguments for
-    # the same.
-    for argname in argnames[:len(args)]:
+    # Check we haven't defined both arguments and keyword arguments for the
+    # same. We turn argnames into a list in case we have a dict-keys object.
+    for argname in list(argnames)[:len(args)]:
         if argname in kwargs:
             err = "got multiple values for keyword argument '%s'"
             raise TypeError(err % argname)
@@ -26,8 +26,8 @@ def common_url_prefix(urls):
     def same(values):
         return all(v==values[0] for v in values[1:])
 
-    import urlparse
-    parsed = [urlparse.urlparse(url) for url in urls]
+    from six.moves.urllib import parse
+    parsed = [parse.urlparse(url) for url in urls]
 
     # We need the same protocol and netloc (host/port), otherwise there
     # is not a common prefix.
@@ -41,7 +41,7 @@ def common_url_prefix(urls):
     commonpath = '/'.join(x[0] for x in tw(same, parts))
 
     res_parts = parsed[0][:2] + (commonpath, '', '', '')
-    res = urlparse.urlunparse(res_parts)
+    res = parse.urlunparse(res_parts)
     if res[-1] != '/':
         res += '/'
     return res

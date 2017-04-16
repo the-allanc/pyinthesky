@@ -1,4 +1,5 @@
 from .base import Connection as _ConnectionBase
+import six
 
 class Connection(_ConnectionBase):
 
@@ -107,6 +108,7 @@ def treat_attributes(attrdict):
 
     return res
 
+@six.python_2_unicode_compatible
 class Recording(object):
 
     def __init__(self, connection, attributes):
@@ -132,8 +134,8 @@ class Recording(object):
 
     def __str__(self):
         schedtime = self.schedtime_text
-        tmpl = '${title}" ({channelName})'
+        tmpl = u'{title}" ({channelName})'
         if schedtime:
-            tmpl += ' [{0}]'
-        tmpl += ' - "{description}"'
+            tmpl += u' [{0}]'
+        tmpl += u' - "{description}"'
         return tmpl.format(schedtime, **self.attributes)

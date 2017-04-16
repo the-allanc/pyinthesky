@@ -1,4 +1,5 @@
 import requests.exceptions
+from six.moves.urllib import parse
 
 DEFAULT_PORT = 49153
 
@@ -38,19 +39,18 @@ class Transport(object):
             resource = resource[1:]
 
         # Relative path.
-        import urlparse
         if '://' not in resource:
             if not self.root:
                 raise ValueError('cannot resolve relative path without a root')
-            return urlparse.urljoin(self.root, resource)
+            return parse.urljoin(self.root, resource)
 
         # Absolute path.
         if not self.fixed_root:
             return resource
 
         # Parse the URL and reattach the root.
-        parsed_url = urlparse.urlparse(resource)
-        return urlparse.urljoin(self.root, resource)
+        parsed_url = parse.urlparse(resource)
+        return parse.urljoin(self.root, resource)
 
     def get_resource(self, location, timeout=None, raw_resp=False):
         url = self._url(location)

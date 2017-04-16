@@ -1,4 +1,5 @@
 from .xmlutils import text_to_etree as _text_to_xml
+import six
 
 from requests import Timeout
 def locate(host=None, port=None, internal=True, timeout=5):
@@ -82,7 +83,7 @@ class Connection(object):
 
     def __init__(self, resources, default_timeout=None):
         from pyinthesky.transport import Transport
-        if isinstance(resources, basestring):
+        if isinstance(resources, six.string_types):
             raise ValueError('resources must be an iterator of strings, not a string type')
 
         self.resources = tuple(resources)
@@ -201,7 +202,7 @@ class Service(object):
         # Try to interpret it as a SOAP response - it may be an error
         # response too.
         try:
-            resp_etree = xmlutils.text_to_etree(respobj.content)
+            resp_etree = xmlutils.text_to_etree(respobj.text)
         except xmlutils.ElementTree.ParseError:
             # Just raise the original HTTP error - but if there wasn't
             # one (curious), then raise an error complaining about the

@@ -4,16 +4,20 @@
 #   http://bugs.python.org/issue20612
 try:
     from xml.etree import cElementTree as ElementTree
-    from cStringIO import StringIO as _StrIO
 except ImportError:
     from xml.etree import ElementTree as ElementTree
-    from StringIO import StringIO as _StrIO
-    
+else:
+    from six.moves import cStringIO
+    import six
+
 
 def text_to_etree(content):
-    if isinstance(content, unicode):
+    # We need the str-type for either Python 2 or 3. We're not expecting py3
+    # bytes to be passed, so we just need to detect the unicode py2 type and
+    # turn it into a str-type.
+    if isinstance(content, six.text_type) and type(content) is not str:
         content = content.encode('utf-8')
-    return ElementTree.parse(_StrIO(content))
+    return ElementTree.parse(cStringIO(content))
 
 def etree_to_text(etree):
     return ElementTree.tostring(etree.getroot())

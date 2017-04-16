@@ -1,6 +1,7 @@
+import six
 from formencode.api import Invalid, NoDefault as _NoDefault
 from formencode.validators import Wrapper
-_unicode_out = Wrapper(convert_from_python=unicode)
+_unicode_out = Wrapper(convert_from_python=six.text_type)
 del Wrapper
 
 class Validator(object):
@@ -30,16 +31,16 @@ class Validator(object):
 
 def create_validator(objdesc, varname):
     args, kw = [], {}
-    if objdesc.pytype is unicode:
 
     from formencode import validators as validmod
+    if objdesc.pytype is six.text_type:
         if objdesc.allowed_values:
             vc = validmod.OneOf
             args = [objdesc.allowed_values]
             ident = 'enum text'
         else:
             vc = validmod.ConfirmType
-            kw = {'subclass': basestring}
+            kw = {'subclass': six.string_types}
             ident = 'text'
     elif objdesc.pytype is int:
         vc = validmod.Int
@@ -68,7 +69,7 @@ def create_multivalidator(validator_dict, varname):
     defaults = {}
 
     def _dict_values_to_unicode(value):
-        return dict((k, unicode(v)) for (k, v) in value.items())
+        return dict((k, six.text_type(v)) for (k, v) in value.items())
 
     from formencode.schema import Schema
     s = Schema()

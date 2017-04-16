@@ -7,6 +7,7 @@ setup_params = dict(
         'requests',
         'iso8601',
         'formencode',
+        'six',
     ],
 )
 

@@ -1,11 +1,11 @@
 def encode(protocol, **headers):
     lines = [protocol]
     lines.extend(['%s: %s' % kv for kv in headers.items()])
-    return '\r\n'.join(lines) + '\r\n\r\n'
+    return ('\r\n'.join(lines) + '\r\n\r\n').encode('ascii')
 
 def decode(data):
     res = {}
-    for dataline in data.splitlines()[1:]:
+    for dataline in data.decode('ascii').splitlines()[1:]:
         line_parts = dataline.split(':', 1)
         # This is to deal with headers with no value.
         if len(line_parts) < 2:
@@ -62,10 +62,13 @@ def service_search(sock, service_type=None, host=None, timeout=10, logger=None, 
             except socket.timeout:
                 now = time.time()
                 continue
-            if data.startswith('HTTP/1.1 200 OK'):
-                servkey = 'ST'
-            elif data.startswith('NOTIFY * HTTP/1.1'):
-                servkey = 'NT'
+
+            for data_prefix, servkey in [
+                (b'HTTP/1.1 200 OK', 'ST'),
+                (b'NOTIFY * HTTP/1.1', 'NT')
+            ]:
+                if data[:len(data_prefix)] == data_prefix:
+                    break
             else:
                 continue
 
