@@ -6,6 +6,7 @@ setup_params = dict(
     install_requires=[
         'requests',
         'iso8601',
+        'formencode',
     ],
 )
 
