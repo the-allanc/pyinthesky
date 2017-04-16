@@ -14,10 +14,10 @@ def text_to_etree(content):
     if isinstance(content, unicode):
         content = content.encode('utf-8')
     return ElementTree.parse(_StrIO(content))
-    
+
 def etree_to_text(etree):
     return ElementTree.tostring(etree.getroot())
-    
+
 # May need to implement strip_schema. Look at:
 #   http://homework.nwsnet.de/releases/45be/
 

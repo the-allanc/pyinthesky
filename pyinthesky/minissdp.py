@@ -2,7 +2,7 @@ def encode(protocol, **headers):
     lines = [protocol]
     lines.extend(['%s: %s' % kv for kv in headers.items()])
     return '\r\n'.join(lines) + '\r\n\r\n'
-    
+
 def decode(data):
     res = {}
     for dataline in data.splitlines()[1:]:
@@ -40,7 +40,7 @@ def service_search(sock, service_type=None, host=None, timeout=10, logger=None, 
     if service_type:
         msgparts['ST'] = service_type
     msg = encode('M-SEARCH * HTTP/1.1', **msgparts)
-    
+
     # Figure out how long we can run for.
     import time
     now = time.time()
@@ -48,11 +48,11 @@ def service_search(sock, service_type=None, host=None, timeout=10, logger=None, 
 
     # We keep on trying every <search_every> seconds.
     while now < give_up_by:
-        
+
         # Search for services.
         sock.sendto(msg, (MCAST_IP, MCAST_PORT))
         next_broadcast = time.time() + search_every
-        
+
         # And listen for responses on the socket until we get
         # matches.
         import socket
@@ -68,14 +68,14 @@ def service_search(sock, service_type=None, host=None, timeout=10, logger=None, 
                 servkey = 'NT'
             else:
                 continue
-                
+
             resp = decode(data)
             resp_servtype = resp[servkey]
-            
+
             # Didn't match particular service.
             if service_type not in (resp_servtype, None):
                 continue
-                
+
             # Perform a host check if we need to.
             location = resp['LOCATION']
             if host:
@@ -83,7 +83,7 @@ def service_search(sock, service_type=None, host=None, timeout=10, logger=None, 
                 urlobj = urlparse.urlparse(location)
                 if host not in (urlobj.netloc, urlobj.hostname):
                     continue
-                
+
             yield resp_servtype, location
 
 def search(service_types=None, host=None, timeout=5, logger=None,
@@ -95,10 +95,10 @@ def search(service_types=None, host=None, timeout=5, logger=None,
     if service_types is None:
         from pyinthesky import SERVICE_TYPES
         service_types = SERVICE_TYPES
-        
+
     if not isinstance(service_types, dict):
         service_types = dict.fromkeys(service_types, True)
-        
+
     import contextlib
     with contextlib.closing(make_socket()) as sock:
         for (service_type, required) in service_types.items():
@@ -110,4 +110,4 @@ def search(service_types=None, host=None, timeout=5, logger=None,
                 if required:
                     from requests import Timeout
                     err = 'unable to find service of type "%s" within %s seconds'
-                    raise Timeout(err % (service_type, timeout)) 
+                    raise Timeout(err % (service_type, timeout))

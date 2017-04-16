@@ -10,21 +10,21 @@ def soap_encode(elements):
     for element in elements:
         body.append(element)
     return ET.ElementTree(res)
-    
+
 def soap_decode(etree):
     from functools import partial
     from .xmlutils import nstag
     tag = partial(nstag, etree)
-    
+
     from .xmlutils import ElementTree as ET
     body = etree.find(tag('Body'))
-    
+
     # Is there a SOAP fault here?
     fault = body.find(tag('Fault'))
     if fault is not None:
         faultcode = fault.find('faultcode').text
         faultstring = fault.find('faultstring').text
-        
+
         # Which exception class? You can get strings like this:
         #   "s:Client.Authentication"
         #
@@ -36,17 +36,17 @@ def soap_decode(etree):
             'Client': SoapClientError,
             'Server': SoapServerError,
         }.get(faulttype, SoapError)
-        
+
         detail = fault.find('detail')
         raise faultclass(faultcode, faultstring, detail.getchildren())
-        
+
     # Otherwise, it's just a normal response, and we want to return the
     # content.
     #ET.dump(body)
     return body.getchildren()
 
 class SoapError(Exception):
-    
+
     def __init__(self, code, message, details):
         Exception.__init__(self, '%s: %s' % (code, message))
         self.code = code

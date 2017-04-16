@@ -7,15 +7,15 @@
 # Should be called func_sig_wrapper
 def method_sig_wrapper(target, name, varnames, defaults=None,
     make_method=False):
-    
+
     # First of all, defaults will need to be a tuple rather than a
     # dictionary.
     defaults_l = []
-        
+
     # Translating the dictionary into the sequence required.
     if defaults:
         defaults_d = defaults.copy()
-        
+
         # We get the X last variable names - they are presumably the
         # variables which have defaults.
         for argname in varnames[-len(defaults):]:
@@ -31,9 +31,9 @@ def method_sig_wrapper(target, name, varnames, defaults=None,
                 raise ValueError("require default value for '%s'" % argname)
         if defaults_d:
             raise ValueError("default provided for unspecified varname: '%s'" % defaults_d.keys()[0])
-    
+
     del defaults
-    
+
     if make_method:
         argstr = ', '.join(['self'] + list(varnames))
         wrapfunc = (
@@ -43,7 +43,7 @@ def method_sig_wrapper(target, name, varnames, defaults=None,
     else:
         argstr = ', '.join(varnames)
         wrapfunc = 'def {name}({argstr}): return _target_(**locals())\n'
-    
+
     wrapfunc = wrapfunc.format(**vars())
     wrapcode = compile(wrapfunc, '<generated_function>', 'exec')
     global_ns = {}
@@ -66,7 +66,7 @@ def make_ambiguous_function(name, func_locations):
     describes = '\n'.join(['  - ' + fl for fl in func_locations])
     cant_do_it.__doc__ = _ambiguous_docstring + describes
     return cant_do_it
-    
+
 # XXX: Add docstrings...
 def bind_service_methods(target, services=None, bind_to_class=False):
     if services is None:
@@ -74,7 +74,7 @@ def bind_service_methods(target, services=None, bind_to_class=False):
 
     from pyinthesky import meta
     bind_to_meta = bind_target_class = False
-    
+
     if bind_to_class is True:
         target_class = target.__class__
     elif bind_to_class is False:
@@ -100,7 +100,7 @@ def bind_service_methods(target, services=None, bind_to_class=False):
             serv_methods.setdefault(methname, []).append([
                 f, service.name + '.' + methname,
             ])
-            
+
     # We've now built functions for all remote methods, so see what we
     # can set and what we can't.
     from types import MethodType
@@ -114,8 +114,8 @@ def bind_service_methods(target, services=None, bind_to_class=False):
         else:
             setattr(target_class, methname, MethodType(f, None, target_class))
 
-	if bind_target_class:
-		target.__class__ = target_class
+    if bind_target_class:
+        target.__class__ = target_class
     if bind_to_meta:
         setattr(meta, target_class.__name__, target_class)
     return dict((k, len(serv_methods[k]) == 1) for k in serv_methods)
@@ -127,7 +127,7 @@ def build_service_methods(service, as_class_methods=False):
     method_registry = {}
     for methname, (in_args, out_args) in service.methods.items():
         if as_class_methods:
-            target = partial(service.__class__.invoke, action_name=methname)    
+            target = partial(service.__class__.invoke, action_name=methname)
         else:
             target = partial(service.invoke, methname)
         f = mkfunc(target, methname, in_args.argument_order, in_args.argument_defaults)

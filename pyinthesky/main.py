@@ -19,7 +19,7 @@ class Connection(_ConnectionBase):
 
     # Browse(self, ObjectID, BrowseFlag, Filter, RequestedCount, StartingIndex, SortCriteria)
     def get_recordings(self, user_only=True):
-        
+
         # Using Browse('BrowseDirectChildren', ObjectID=0), you can determine the valid
         # object ID's to use, which are:
         #   3 - "pvr"
@@ -41,33 +41,33 @@ class Connection(_ConnectionBase):
 
     def count_recordings(self):
         return self.Browse('3', 'BrowseDirectChildren', '*', 1, 0, '')['TotalMatches']
-        
+
     def get_disk_space_info(self):
         d = self.Browse('3', 'BrowseMetadata', '*', 25, 0, '')
-        
+
         from .xmlutils import text_to_etree, simple_elements_dict
         attrnode = text_to_etree(d['Result']).getroot().getchildren()[0]
         attrs = treat_attributes(simple_elements_dict(attrnode))
-        
+
         kb_used = attrs['quotaInfo.usedSize']
         kb_max = attrs['quotaInfo.maxSize']
         return dict(
-        
+
             # Values in KB.
             kb_used = kb_used,
             kb_max = kb_max,
             kb_free = kb_max - kb_used,
-            
+
             # Values in MB.
             mb_used = kb_used / 1024,
             mb_max = kb_max / 1024,
             mb_free = (kb_max - kb_used) / 1024,
-            
+
             # Values in GB.
             gb_used = kb_used / 1048576.0,
             gb_max = kb_max / 1048576.0,
             gb_free = (kb_max - kb_used) / 1048576.0,
-            
+
             # Percentages.
             perc_used = (float(kb_used) / kb_max) * 100,
             perc_free = (float(kb_max - kb_used) / kb_max) * 100,
@@ -90,7 +90,7 @@ def treat_attributes(attrdict):
         # Flags are obviously booleans.
         if key.startswith('flags.'):
             value = bool(value)
-            
+
         # As well as any type of "isXXX" value.
         lkey = key.split('.')[-1]
         if lkey.startswith('is') and lkey[2].isupper():
@@ -127,7 +127,7 @@ class Recording(object):
         tmpl = '<Recording "{title}" ({channelName})'
         if schedtime:
             tmpl += ' at {0}'
-        tmpl += '>'       
+        tmpl += '>'
         return tmpl.format(schedtime, **self.attributes)
 
     def __str__(self):

@@ -20,41 +20,41 @@ class Transport(object):
             raise ValueError('cannot fix root without any host / root values')
         else:
             self.root = None
-            
+
         self.fixed_root = fixed_root
-            
+
         import requests
         self.session = requests.Session()
-        
+
         # Needed otherwise requests will not be authenticated correctly.
         self.session.headers['User-Agent'] = 'SKY_skyplus'
         self.default_timeout = default_timeout
-        
+
     def _url(self, resource):
-        
+
         # Resources cannot be at a higher path than the route, so relative
         # resources will have their leading slashes removed.
         if resource.startswith('/'):
             resource = resource[1:]
-        
+
         # Relative path.
         import urlparse
         if '://' not in resource:
             if not self.root:
                 raise ValueError('cannot resolve relative path without a root')
             return urlparse.urljoin(self.root, resource)
-        
+
         # Absolute path.
         if not self.fixed_root:
             return resource
-        
+
         # Parse the URL and reattach the root.
         parsed_url = urlparse.urlparse(resource)
         return urlparse.urljoin(self.root, resource)
-        
+
     def get_resource(self, location, timeout=None, raw_resp=False):
         url = self._url(location)
-        
+
         import requests
         req = requests.Request('GET', url)
         req = self.session.prepare_request(req)
@@ -62,14 +62,14 @@ class Transport(object):
         if not raw_resp:
             resp.raise_for_status()
         return resp
-        
+
     def send_request(self, req, timeout=10):
         return self.session.send(req, timeout=timeout)
-        
+
     def soap_request(self, location, schema, method, soapbody,
         timeout=None, raw_resp=False):
         url = self._url(location)
-        
+
         # Quotes around the soap-action header is important - you will
         # get a 500 error otherwise. Same with the Content-Type - if
         # this is missing, a 500 response is returned.
@@ -87,7 +87,7 @@ class Transport(object):
         if not raw_resp:
             resp.raise_for_status()
         return resp
-        
+
     def __str__(self):
         return '<{0.__class__.__name__} for {0.root}>'.format(self)
 
@@ -95,8 +95,8 @@ class Transport(object):
         return '<{0.__class__.__name__}({0.root}) at {1}>'.format(
             self, hex(id(self))
         )
-    
-    ConnectionError = requests.exceptions.ConnectionError    
+
+    ConnectionError = requests.exceptions.ConnectionError
     HTTPError = requests.exceptions.HTTPError
     Timeout = requests.exceptions.Timeout
-    
+
