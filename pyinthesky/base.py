@@ -159,10 +159,11 @@ class Service(object):
 
         # And now create input and output validators for methods.
         from pyinthesky.validators import create_multivalidator
+        from collections import OrderedDict as OD
         self.methods = {}
         for name, action in self.service_desc.actions.items():
-            in_vals = {k: validators[v] for (k, v) in action.parameters.items()}
-            out_vals = {k: validators[v] for (k, v) in action.returns.items()}
+            in_vals = OD((k, validators[v]) for (k, v) in action.parameters.items())
+            out_vals = OD((k, validators[v]) for (k, v) in action.returns.items())
             self.methods[name] = [
                 create_multivalidator(in_vals, name),
                 create_multivalidator(out_vals, name),

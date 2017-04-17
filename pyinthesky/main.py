@@ -18,7 +18,7 @@ class Connection(_ConnectionBase):
             setattr(self, device.devtype, device)
         bind_service_methods(self, all_services, bind_to_class=True)
 
-    # Browse(self, ObjectID, BrowseFlag, Filter, RequestedCount, StartingIndex, SortCriteria)
+    # Browse(ObjectID, BrowseFlag, Filter, StartingIndex, RequestedCount, SortCriteria)
     def get_recordings(self, user_only=True):
 
         # Using Browse('BrowseDirectChildren', ObjectID=0), you can determine the valid
@@ -29,7 +29,7 @@ class Connection(_ConnectionBase):
         from .xmlutils import text_to_etree, simple_elements_dict
         i = 0
         while True:
-            res_dict = self.Browse('3', 'BrowseDirectChildren', '*', 25, i, '')
+            res_dict = self.Browse('3', 'BrowseDirectChildren', '*', i, 25, '')
             res_etree = text_to_etree(res_dict['Result'])
             for item_node in res_etree.getroot().getchildren():
                 rec = Recording(self, simple_elements_dict(item_node))
