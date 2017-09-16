@@ -10,7 +10,7 @@ install:
 - pip install coveralls pytest-cov
 script:
 - python setup.py checkdocs
-- py.test --cov SKELETON/
+- py.test --cov pyinthesky/
 - sphinx-build -W docs/ build/docs/
 after_script:
 - flake8
