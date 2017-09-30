@@ -26,7 +26,6 @@ API
    api/meta.rst
    api/methods.rst
    api/minisoap.rst
-   api/minissdp.rst
    api/miniupnp.rst
    api/transport.rst
    api/utils.rst

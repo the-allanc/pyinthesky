@@ -1,4 +1,5 @@
 from .xmlutils import text_to_etree as _text_to_xml
+from six.moves.urllib.parse import urlparse
 import six
 
 from requests import Timeout
@@ -6,10 +7,58 @@ def locate(host=None, port=None, internal=True, timeout=5):
     if not (host or internal):
         raise ValueError('cannot make external connection with no explicit host given')
     if internal:
-        from .minissdp import search
-        return search(host=host, timeout=timeout, resources_only=True)
+        return locate_by_ssdp(host=host, timeout=timeout)
     else:
         return locate_by_resource(host, port)
+
+
+def locate_by_ssdp(service_types=None, host=None, timeout=5):
+    from greyupnp.ssdp import search as ssdp_search
+
+    if service_types is None:
+        from pyinthesky import SERVICE_TYPES
+        service_types = SERVICE_TYPES
+
+    if not isinstance(service_types, dict):
+        service_types = dict.fromkeys(service_types, True)
+
+    # This is where we'll store discovery objects as they're returned.
+    collected = set()
+    searches = ssdp_search(tuple(service_types), timeout)
+
+    def host_matches(discovery):
+        urlobj = urlparse(discovery.location)
+        return (not host) or host in (urlobj.netloc, urlobj.hostname)
+
+    for (service_type, required) in service_types.items():
+
+        # See if we've found the service type already.
+        res = None
+
+        for discovery in collected:
+            if discovery.type == service_type and host_matches(discovery):
+                res = discovery
+                break
+
+        # Otherwise, listen to incoming search results and see if that matches.
+        if not res:
+            for discovery in searches:
+                collected.add(discovery)
+                if discovery.type == service_type and host_matches(discovery):
+                    res = discovery
+                    break
+
+        # Return a result if we found it...
+        if res:
+            yield res.location
+            continue
+
+        # Or complain if we didn't find it, yet need it...
+        elif required:
+            from requests import Timeout
+            err = 'unable to find service of type "%s" within %s seconds'
+            raise Timeout(err % (service_type, timeout))
+
 
 # Iterate over this resource.
 def locate_by_resource(host, port=None, timeout=5):

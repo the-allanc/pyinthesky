@@ -55,6 +55,7 @@ params = dict(
         'iso8601',
         'formencode',
         'six',
+        'greyupnp',
     ],
     extras_require={
         'testing': [

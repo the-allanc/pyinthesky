@@ -1,4 +1,4 @@
-from .base import Connection as _ConnectionBase
+from .base import Connection as _ConnectionBase, locate
 import six
 
 class Connection(_ConnectionBase):
