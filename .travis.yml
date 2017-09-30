@@ -11,9 +11,12 @@ install:
 script:
 - python setup.py checkdocs
 - py.test --cov pyinthesky/
+- py.test --cov pyinthesky/
 - sphinx-build -W docs/ build/docs/
+- pylint --disable=W pyinthesky/
 after_script:
 - flake8
+- pylint pyinthesky/
 branches:
   except:
   - skeleton

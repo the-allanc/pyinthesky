@@ -1,8 +1,5 @@
 #!/usr/bin/env python
 
-# Project skeleton maintained at https://github.com/the-allanc/skeleton
-# All the hard work done by jaraco at https://github.com/jaraco/skeleton
-
 #
 # Extract the project identity from the README.
 #
@@ -38,7 +35,7 @@ description = get_description()
 
 params = dict(
     name=name,
-    version='0.1',
+    use_scm_version=True,
     author="Allan Crooks",
     author_email="allan@increment.one",
     description=summary or name,
