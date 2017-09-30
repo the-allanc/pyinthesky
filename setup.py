@@ -67,6 +67,9 @@ params = dict(
             'collective.checkdocs',
         ],
     },
+    setup_requires=[
+        'setuptools_scm>=1.15.0',
+    ],
     classifiers=[
         # "Development Status :: 3 - Alpha",
         "Development Status :: 4 - Beta",
