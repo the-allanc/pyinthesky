@@ -38,6 +38,30 @@
 
 |Docs| |Release Version| |Python Version| |License| |Build Status| |Coverage| |Code Climate|
 
+This library is to make it straight-forward to connect to `Sky+ <https://en.wikipedia.org/wiki/Sky%2B>`_
+boxes - using the `UPnP <https://en.wikipedia.org/wiki/Universal_Plug_and_Play>_` protocol, you can invoke
+actions
+
+    >>> import pyinthesky
+    >>> skybox = pyinthesky.locate() # Find the Sky box on the network.
+    >>> conn = pyinthesky.Connection(skybox)
+    >>> conn.connect()
+    >>> 
+    >>> recs = conn.get_recordings()
+    >>> next(recs)
+    <Recording "Doctor Who: The Seeds Of Death" (horror channel) at 2015-05-12 10:00>
+    >>> 
+    >>> conn.count_recordings()
+    171
+    >>> 
+    >>> conn.get_disk_space_info()['perc_used']
+    77.67807431685328
+    >>>
+    >>> # The below methods are dynamically created when a connection is made and we
+    >>> # load up the service descriptions from the box.
+    >>> conn.Pause(0) # Pause the currently playing show.
+    >>> conn.Play(0)  # And resume.
+
 .. all-content-above-will-be-included-in-sphinx-docs
 
 You can browse the source code and file bug reports at the project repository_. Full documentation can be found `here`__.
