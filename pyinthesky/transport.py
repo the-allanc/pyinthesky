@@ -3,6 +3,7 @@ from six.moves.urllib import parse
 
 DEFAULT_PORT = 49153
 
+
 class Transport(object):
 
     def __init__(self, host=None, port=None, root=None, fixed_root=False, default_timeout=10):
@@ -96,4 +97,3 @@ class Transport(object):
     ConnectionError = requests.exceptions.ConnectionError
     HTTPError = requests.exceptions.HTTPError
     Timeout = requests.exceptions.Timeout
-

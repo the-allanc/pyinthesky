@@ -21,10 +21,11 @@ def args_to_kwargs(args, kwargs, argnames):
     res.update(zip(argnames, args))
     return res
 
+
 # Based around this: http://rosettacode.org/wiki/Find_Common_Directory_Path#Python
 def common_url_prefix(urls):
     def same(values):
-        return all(v==values[0] for v in values[1:])
+        return all(v == values[0] for v in values[1:])
 
     from six.moves.urllib import parse
     parsed = [parse.urlparse(url) for url in urls]

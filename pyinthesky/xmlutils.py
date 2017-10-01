@@ -19,12 +19,13 @@ def text_to_etree(content):
         content = content.encode('utf-8')
     return ElementTree.parse(cStringIO(content))
 
+
 def etree_to_text(etree):
     return ElementTree.tostring(etree.getroot())
 
+
 # May need to implement strip_schema. Look at:
 #   http://homework.nwsnet.de/releases/45be/
-
 def nstag(tree, tag):
     # If you use the lxml implementation of etree, it's easier to get
     # the schema qualifier:
@@ -33,9 +34,10 @@ def nstag(tree, tag):
     # That would return the schema without the curly braces.
     roottag = tree.getroot().tag
     if '}' not in roottag:
-        return tag # No schema.
+        return tag  # No schema.
     schema = roottag.split('}', 1)[0] + '}'
     return '{0}{1}'.format(schema, tag)
+
 
 def simple_elements_dict(node):
     d = {}
@@ -51,6 +53,7 @@ def simple_elements_dict(node):
         for attrname, attrvalue in childnode.items():
             d[tagname + '.' + attrname] = attrvalue
     return d
+
 
 def striptag(node):
     return node.tag.split('}')[-1]

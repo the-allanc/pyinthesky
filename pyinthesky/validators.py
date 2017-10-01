@@ -4,6 +4,7 @@ from formencode.validators import Wrapper
 _unicode_out = Wrapper(convert_from_python=six.text_type)
 del Wrapper
 
+
 class Validator(object):
 
     def __init__(self, validator, ident_string, output_wrapper=None):
@@ -28,6 +29,7 @@ class Validator(object):
 
     def __repr__(self):
         return '<Validator(%s) at %s>' % (self.ident, hex(id(self)))
+
 
 def create_validator(objdesc, varname):
     args, kw = [], {}
@@ -62,6 +64,7 @@ def create_validator(objdesc, varname):
 
     v = vc(*args, **kw)
     return Validator(v, ident, output_wrapper=_unicode_out)
+
 
 def create_multivalidator(validator_dict, varname):
 

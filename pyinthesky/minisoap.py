@@ -11,6 +11,7 @@ def soap_encode(elements):
         body.append(element)
     return ET.ElementTree(res)
 
+
 def soap_decode(etree):
     from functools import partial
     from .xmlutils import nstag
@@ -46,6 +47,7 @@ def soap_decode(etree):
     # ET.dump(body)
     return body.getchildren()
 
+
 class SoapError(Exception):
 
     def __init__(self, code, message, details):
@@ -54,5 +56,10 @@ class SoapError(Exception):
         self.message = message
         self.details = details
 
-class SoapClientError(SoapError): pass
-class SoapServerError(SoapError): pass
+
+class SoapClientError(SoapError):
+    pass
+
+
+class SoapServerError(SoapError):
+    pass

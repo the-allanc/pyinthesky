@@ -1,9 +1,10 @@
 from .xmlutils import text_to_etree as _text_to_xml
+from requests import Timeout
 from six.moves import range
 from six.moves.urllib.parse import urlparse
 import six
 
-from requests import Timeout
+
 def locate(host=None, port=None, internal=True, timeout=5):
     if not (host or internal):
         raise ValueError('cannot make external connection with no explicit host given')
@@ -123,10 +124,10 @@ def locate_by_resource(host, port=None, timeout=5):
             r.raise_for_status()
 
 
-
 def default_validator(service_type, key, value):
     from .validators import create_validator
     return create_validator(value, key)
+
 
 class Connection(object):
 
@@ -162,6 +163,7 @@ class Connection(object):
         for upnp_device in upnp_devices:
             self.devices[upnp_device.devtype] = Device(self, upnp_device)
 
+
 class Device(object):
 
     def __init__(self, connection, upnp_device):
@@ -181,6 +183,7 @@ class Device(object):
     # XXX: Maybe not.
     def __repr__(self):
         return repr(self.upnp_device)
+
 
 class Service(object):
 
@@ -202,7 +205,7 @@ class Service(object):
         #
         # It's a map from statevar objects to validators.
         validators = {
-            v: self.create_validator(self.upnp_service.servtype, k, v) # pylint: disable=not-callable
+            v: self.create_validator(self.upnp_service.servtype, k, v)  # pylint: disable=not-callable
             for (k, v) in self.service_desc.states.items()
         }
 
@@ -303,4 +306,6 @@ class Service(object):
     def create_validator(self):
         return self.device.connection.create_validator
 
-class ActionValueError(ValueError): pass
+
+class ActionValueError(ValueError):
+    pass

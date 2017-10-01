@@ -1,5 +1,6 @@
-from .base import Connection as _ConnectionBase, locate
+from .base import Connection as _ConnectionBase
 import six
+
 
 class Connection(_ConnectionBase):
 
@@ -58,26 +59,27 @@ class Connection(_ConnectionBase):
         return dict(
 
             # Values in KB.
-            kb_used = kb_used,
-            kb_max = kb_max,
-            kb_free = kb_max - kb_used,
+            kb_used=kb_used,
+            kb_max=kb_max,
+            kb_free=kb_max - kb_used,
 
             # Values in MB.
-            mb_used = kb_used / 1024,
-            mb_max = kb_max / 1024,
-            mb_free = (kb_max - kb_used) / 1024,
+            mb_used=kb_used / 1024,
+            mb_max=kb_max / 1024,
+            mb_free=(kb_max - kb_used) / 1024,
 
             # Values in GB.
-            gb_used = kb_used / 1048576.0,
-            gb_max = kb_max / 1048576.0,
-            gb_free = (kb_max - kb_used) / 1048576.0,
+            gb_used=kb_used / 1048576.0,
+            gb_max=kb_max / 1048576.0,
+            gb_free=(kb_max - kb_used) / 1048576.0,
 
             # Percentages.
-            perc_used = (float(kb_used) / kb_max) * 100,
-            perc_free = (float(kb_max - kb_used) / kb_max) * 100,
+            perc_used=(float(kb_used) / kb_max) * 100,
+            perc_free=(float(kb_max - kb_used) / kb_max) * 100,
         )
 
     # XXX: Need a __str__ and a __repr__
+
 
 def treat_attributes(attrdict):
     res = {}
@@ -111,14 +113,15 @@ def treat_attributes(attrdict):
 
     return res
 
+
 @six.python_2_unicode_compatible
 class Recording(object):
 
     def __init__(self, connection, attributes):
         self.connection = connection
         self.attributes = treat_attributes(attributes)
-        #for name, value in simple_elements_dict.items():
-        #    setattr(self, name, value)
+        # for name, value in simple_elements_dict.items():
+        #     setattr(self, name, value)
 
     @property
     def schedtime_text(self):

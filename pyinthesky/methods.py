@@ -9,6 +9,7 @@
 from functools import partial
 import six
 
+
 def method_sig_wrapper(target, name, varnames, defaults=None,
     make_method=False):
 
@@ -56,20 +57,24 @@ def method_sig_wrapper(target, name, varnames, defaults=None,
     f.func_defaults = tuple(defaults_l)
     return f
 
+
 _ambiguous_docstring = '''
 This is a convenience function which cannot be used, as there are multiple
 methods available with the same name. You will have to call the required
 methods more directly:
 '''.strip() + '\n'
 
+
 def make_ambiguous_function(name, func_locations):
     e = 'method "%s" is ambiguous - will need to invoke directly from service'
+
     def cant_do_it(*args, **kwargs):
         raise RuntimeError(e % name)
     cant_do_it.__name__ = name
     describes = '\n'.join(['  - ' + fl for fl in func_locations])
     cant_do_it.__doc__ = _ambiguous_docstring + describes
     return cant_do_it
+
 
 # XXX: Add docstrings...
 def bind_service_methods(target, services=None, bind_to_class=False):
@@ -122,4 +127,3 @@ def bind_service_methods(target, services=None, bind_to_class=False):
     if bind_to_meta:
         setattr(meta, target_class.__name__, target_class)
     return dict((k, len(serv_methods[k]) == 1) for k in serv_methods)
-

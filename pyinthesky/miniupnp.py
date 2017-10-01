@@ -8,6 +8,7 @@
 #
 import six
 
+
 def parse_service_description(etree):
     from functools import partial
     from .xmlutils import nstag
@@ -109,6 +110,7 @@ def parse_service_description(etree):
 
     return ServiceControl(actions, states)
 
+
 class StateVariable(object):
 
     allowed_values = None
@@ -127,6 +129,7 @@ class StateVariable(object):
     def __repr__(self):
         return '<StateVariable(name="{0.name}", datatype="{0.datatype}">'.format(self)
 
+
 class Action(object):
 
     def __init__(self, name, parameters, returns):
@@ -140,11 +143,13 @@ class Action(object):
     def __repr__(self):
         return '<Action(name="{0.name}")">'.format(self)
 
+
 class ServiceControl(object):
 
     def __init__(self, actions, states):
         self.actions = actions
         self.states = states
+
 
 #
 #
@@ -173,6 +178,7 @@ def parse_device_description(etree):
     # Now we create the device object.
     device = Device(device_attrs, service_dict, url_base)
     return device
+
 
 class Service(object):
 
@@ -206,6 +212,7 @@ class Service(object):
         return ('<pyinthesky.miniupnp.Service(name="{0.name}", '
             'servtype="{0.servtype}") at "{0._location}">').format(self)
 
+
 class Device(object):
 
     def __init__(self, attrs, services, url_base):
@@ -236,6 +243,7 @@ class Device(object):
         return '<pyinthesky.miniupnp.Device(' + \
             (', '.join(attrs)).format(self) + ')'
 
+
 def encode_action_request(schema, action, parameters):
     from .xmlutils import ElementTree as ET
     res = ET.Element('u:' + action)
@@ -249,6 +257,7 @@ def encode_action_request(schema, action, parameters):
         param.text = value
     return res
 
+
 def decode_action_response(action, element):
     from .xmlutils import simple_elements_dict, striptag
     if striptag(element) != action + 'Response':
@@ -256,6 +265,7 @@ def decode_action_response(action, element):
             (action, striptag(element.tag)))
 
     return simple_elements_dict(element)
+
 
 def check_upnp_error(soap_error):
     from .xmlutils import simple_elements_dict, striptag
@@ -274,12 +284,14 @@ def check_upnp_error(soap_error):
     desc = details['errorDescription']
     return UPnPError(code, desc)
 
+
 class UPnPError(Exception):
 
     def __init__(self, code, desc):
         Exception.__init__(self, "[%s] %s" % (code, desc))
         self.code = code
         self.desc = desc
+
 
 def is_action_value_error(upnp_error):
     return upnp_error.code == 718
