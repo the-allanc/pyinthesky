@@ -2,9 +2,8 @@ language: python
 python:
 - 2.7
 - 3.6
-# Check that all template lines from the skeleton project have been removed.
-#   Do NOT remove this when customising your project.
-before_install: ['! grep -R SKELETON | grep -v grep']
+before_install:
+- "! grep -R SKELETON | grep -v grep"
 install:
 - pip install -r requirements-dev.txt
 - pip install coveralls pytest-cov
@@ -27,7 +26,8 @@ deploy:
     tags: true
     all_branches: true
   user: amc6010
-  # supply password with `travis encrypt --add deploy.password`
   distributions: dists
+  password:
+    secure: DfAkleDON3RuDTus2b17xg8NfzyDPBmlE+ye08+fYQGKbFfWjClRehy/vFmKe6yR5cLFKt42zj83V31bllEppO87AbZmjd6bZImtAFw0MhOZi3ChwbrwoHz1cbVo5Z4jkKH2jTFedE72VFIWFx32fFdMDd9x3Js/a4kMQrq1WTo=
 after_success:
 - coveralls
