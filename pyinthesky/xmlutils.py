@@ -6,9 +6,9 @@ try:
     from xml.etree import cElementTree as ElementTree
 except ImportError:
     from xml.etree import ElementTree as ElementTree
-else:
-    from six.moves import cStringIO
-    import six
+
+from six.moves import cStringIO
+import six
 
 
 def text_to_etree(content):
@@ -41,7 +41,7 @@ def simple_elements_dict(node):
     d = {}
     for attrname, attrvalue in node.items():
         d[attrname] = attrvalue
-    for childnode in node.getchildren():
+    for childnode in list(node):
         tagname = childnode.tag
         if '}' in tagname:
             tagname = tagname.split('}')[-1]

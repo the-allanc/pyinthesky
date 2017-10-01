@@ -31,7 +31,7 @@ class Connection(_ConnectionBase):
         while True:
             res_dict = self.Browse('3', 'BrowseDirectChildren', '*', i, 25, '')
             res_etree = text_to_etree(res_dict['Result'])
-            for item_node in res_etree.getroot().getchildren():
+            for item_node in list(res_etree.getroot()):
                 rec = Recording(self, simple_elements_dict(item_node))
                 if user_only and rec.attributes['bookingDiskQuotaName'] != 'user':
                     continue
@@ -39,6 +39,9 @@ class Connection(_ConnectionBase):
             if res_dict['NumberReturned'] < 25:
                 break
             i += 25
+
+    def Browse(self, *args, **kwargs):
+        raise RuntimeError('Must call connect() method before using this method.')
 
     def count_recordings(self):
         return self.Browse('3', 'BrowseDirectChildren', '*', 1, 0, '')['TotalMatches']

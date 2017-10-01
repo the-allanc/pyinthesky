@@ -1,4 +1,4 @@
-import requests.exceptions
+import requests
 from six.moves.urllib import parse
 
 DEFAULT_PORT = 49153
@@ -24,7 +24,6 @@ class Transport(object):
 
         self.fixed_root = fixed_root
 
-        import requests
         self.session = requests.Session()
 
         # Needed otherwise requests will not be authenticated correctly.
@@ -55,7 +54,6 @@ class Transport(object):
     def get_resource(self, location, timeout=None, raw_resp=False):
         url = self._url(location)
 
-        import requests
         req = requests.Request('GET', url)
         req = self.session.prepare_request(req)
         resp = self.send_request(req, timeout=timeout)
@@ -79,7 +77,6 @@ class Transport(object):
         }
 
         # XXX: Might need some encoding checks here.
-        import requests
         req = requests.Request('POST', url, headers=headers,
             data=soapbody)
         req = self.session.prepare_request(req)

@@ -6,6 +6,7 @@
 #
 # Should be called func_sig_wrapper
 
+from functools import partial
 import six
 
 def method_sig_wrapper(target, name, varnames, defaults=None,
@@ -31,7 +32,7 @@ def method_sig_wrapper(target, name, varnames, defaults=None,
                 defaults_l = []
                 defaults_d = {}
                 break
-                raise ValueError("require default value for '%s'" % argname)
+                # raise ValueError("require default value for '%s'" % argname)
         if defaults_d:
             raise ValueError("default provided for unspecified varname: '%s'" % defaults_d.keys()[0])
 
@@ -91,7 +92,6 @@ def bind_service_methods(target, services=None, bind_to_class=False):
         bind_to_meta = True
         bind_target_class = True
 
-    from functools import partial
     serv_methods = {}
     for service in services:
         for methname, (in_args, out_args) in service.methods.items():
@@ -106,7 +106,6 @@ def bind_service_methods(target, services=None, bind_to_class=False):
 
     # We've now built functions for all remote methods, so see what we
     # can set and what we can't.
-    from types import MethodType
     for methname, methods in serv_methods.items():
         if len(methods) == 1:
             f = methods[0][0]
@@ -124,16 +123,3 @@ def bind_service_methods(target, services=None, bind_to_class=False):
         setattr(meta, target_class.__name__, target_class)
     return dict((k, len(serv_methods[k]) == 1) for k in serv_methods)
 
-def build_service_methods(service, as_class_methods=False):
-    if not hasattr(service, methods):
-        raise ValueError('cannot pass unconnected service object')
-
-    method_registry = {}
-    for methname, (in_args, out_args) in service.methods.items():
-        if as_class_methods:
-            target = partial(service.__class__.invoke, action_name=methname)
-        else:
-            target = partial(service.invoke, methname)
-        f = mkfunc(target, methname, in_args.argument_order, in_args.argument_defaults)
-        method_registry[methname] = f
-    return method_registry

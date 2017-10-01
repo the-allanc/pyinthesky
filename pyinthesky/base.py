@@ -1,4 +1,5 @@
 from .xmlutils import text_to_etree as _text_to_xml
+from six.moves import range
 from six.moves.urllib.parse import urlparse
 import six
 
@@ -55,7 +56,6 @@ def locate_by_ssdp(service_types=None, host=None, timeout=5):
 
         # Or complain if we didn't find it, yet need it...
         elif required:
-            from requests import Timeout
             err = 'unable to find service of type "%s" within %s seconds'
             raise Timeout(err % (service_type, timeout))
 
@@ -76,7 +76,7 @@ def locate_by_resource(host, port=None, timeout=5):
     counted = 0
 
     # Not sure if there's a maximum number for descriptions.
-    for i in xrange(1000):
+    for i in range(1000):
         loc = 'description%d.xml' % i
         now = time.time()
         if now > finish_by:
@@ -202,7 +202,7 @@ class Service(object):
         #
         # It's a map from statevar objects to validators.
         validators = {
-            v: self.create_validator(self.upnp_service.servtype, k, v)
+            v: self.create_validator(self.upnp_service.servtype, k, v) # pylint: disable=not-callable
             for (k, v) in self.service_desc.states.items()
         }
 
@@ -272,7 +272,7 @@ class Service(object):
             # Check to see if it specifically refers to a problem with
             # a given value.
             if not miniupnp.is_action_value_error(ue):
-                raise ue
+                raise ue  # pylint: disable=raising-bad-type
 
             ave = ActionValueError(ue.desc)
             ave.cause = ue

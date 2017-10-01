@@ -74,7 +74,7 @@ def create_multivalidator(validator_dict, varname):
     from formencode.schema import Schema
     s = Schema()
     for subvarname, subvalidator in validator_dict.items():
-        s.add_field(subvarname, subvalidator.in_validator)
+        s.add_field(subvarname, subvalidator.in_validator)  # pylint: disable=no-value-for-parameter
         identifiers.append("%s='%s'" % (subvarname, subvalidator.ident))
         the_default = subvalidator.in_validator.if_missing
         if the_default is not _NoDefault:

@@ -16,7 +16,6 @@ def soap_decode(etree):
     from .xmlutils import nstag
     tag = partial(nstag, etree)
 
-    from .xmlutils import ElementTree as ET
     body = etree.find(tag('Body'))
 
     # Is there a SOAP fault here?
@@ -42,7 +41,9 @@ def soap_decode(etree):
 
     # Otherwise, it's just a normal response, and we want to return the
     # content.
-    #ET.dump(body)
+    #
+    # from .xmlutils import ElementTree as ET
+    # ET.dump(body)
     return body.getchildren()
 
 class SoapError(Exception):
