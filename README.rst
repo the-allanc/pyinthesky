@@ -39,8 +39,11 @@
 |Docs| |Release Version| |Python Version| |License| |Build Status| |Coverage| |Code Climate|
 
 This library is to make it straight-forward to connect to `Sky+ <https://en.wikipedia.org/wiki/Sky%2B>`_
-boxes - using the `UPnP <https://en.wikipedia.org/wiki/Universal_Plug_and_Play>_` protocol, you can invoke
-actions
+boxes - using the `UPnP <https://en.wikipedia.org/wiki/Universal_Plug_and_Play>`_ protocol, you can invoke
+actions to interact with the box.
+
+Example Usage
+-------------
 
     >>> import pyinthesky
     >>> skybox = pyinthesky.locate() # Find the Sky box on the network.
