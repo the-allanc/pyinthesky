@@ -48,7 +48,7 @@ class Connection(_ConnectionBase):
         return self.Browse('3', 'BrowseDirectChildren', '*', 1, 0, '')['TotalMatches']
 
     def get_disk_space_info(self):
-        d = self.Browse('3', 'BrowseMetadata', '*', 25, 0, '')
+        d = self.Browse('3', 'BrowseMetadata', '*', 0, 1, '')
 
         from .xmlutils import text_to_etree, simple_elements_dict
         attrnode = text_to_etree(d['Result']).getroot().getchildren()[0]
